@@ -53,11 +53,11 @@ void VulkanLoader::createInstance()
 
 	VkResult result;
 	if ((result = vkCreateInstance(&icInfo, NULL, &vkInfo.instance)) == VK_ERROR_INCOMPATIBLE_DRIVER) {
-		Log::Instance().log("cannot find a compatible Vulkan ICD");
+		Log::Instance()->log("cannot find a compatible Vulkan ICD");
 		AppManager::appExit();
 	}
 	else if (result) {
-		Log::Instance().log("unknown error:" + result);
+		Log::Instance()->log("unknown error:" + result);
 		AppManager::appExit();
 	}
 
@@ -87,8 +87,8 @@ void VulkanLoader::checkQueuiFamily(unsigned int gpuIndex)
 	queueProps.resize(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(gpu, &queueFamilyCount, queueProps.data());
 
-	Log::Instance().log("print gpu info start.");
-	Log::Instance().log("\ngpu:" + std::to_string(gpuIndex) + "\tfamily count:" + std::to_string(queueFamilyCount));
+	Log::Instance()->log("print gpu info start.");
+	Log::Instance()->log("gpu:" + std::to_string(gpuIndex) + "\tfamily count:" + std::to_string(queueFamilyCount));
 	for (i = 0; i < queueFamilyCount; i++) 
 	{
 		std::string msg = "family:" + std::to_string(i) + "\t";
@@ -99,13 +99,13 @@ void VulkanLoader::checkQueuiFamily(unsigned int gpuIndex)
 			std::to_string(queueProps[i].minImageTransferGranularity.width) + ','
 			+ std::to_string(queueProps[i].minImageTransferGranularity.height) + ','
 			+ std::to_string(queueProps[i].minImageTransferGranularity.depth);
-		Log::Instance().log(msg);
+		Log::Instance()->log(msg);
 		if (queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			vkInfo.gpuIndex = gpuIndex;
 			vkInfo.queueFamilyIndex = i;
 		}
 	}
-	Log::Instance().log("print gpu info end.");
+	Log::Instance()->log("print gpu info end.");
 }
 
 void VulkanLoader::createLogicalDevice()

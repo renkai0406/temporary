@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "log.h"
 
-Log Log::instance;
+Log* Log::instance = NULL;
 
 Log::Log()
 {
@@ -12,7 +12,7 @@ Log::~Log()
 {
 }
 
-Log& Log::Instance()
+Log* const Log::Instance()
 {
 	return instance;
 }
