@@ -22,3 +22,6 @@ Vulkan/.vs/Vulkan/v15/ipch/d84eecd416063069.ipch
 Vulkan/Vulkan/Debug/pch.obj
 Vulkan/Vulkan/Debug/Vulkan.obj
 Vulkan/Vulkan/Debug/vkloader.obj.enc
+*.log
+Vulkan/Vulkan/x64/Debug/*.obj
+Vulkan/Vulkan/x64/Debug/Vulkan.tlog/*.tlog
