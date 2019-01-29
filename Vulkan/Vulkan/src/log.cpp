@@ -14,6 +14,8 @@ Log::~Log()
 
 Log* const Log::Instance()
 {
+	if (!instance)
+		instance = new Log();
 	return instance;
 }
 

@@ -147,3 +147,8 @@ void VulkanLoader::createCommandBuffer()
 	VkResult result = vkAllocateCommandBuffers(vkInfo.device, &cbaInfo, &vkInfo.cbuffer);
 	AppManager::appAssert(result == VK_SUCCESS, "something bad happened when allocating command buffers.");
 }
+
+void VulkanLoader::createSuface()
+{
+	VkSurfaceKHR surface;
+}

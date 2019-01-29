@@ -9,14 +9,14 @@ int main()
 {
 	init();
 	
-	Log::Instance().log("the program has done,press any key to continue...");
+	Log::Instance()->log("the program has done,press any key to continue...");
 	std::getchar();
 	return 0;
 	//VulkanLoader::destory();
 }
 
 void init() {
-	Log::Instance().init();
-	Log::Instance().log("Hello Vulkan!\n");
+	Log::Instance()->init();
+	Log::Instance()->log("Hello Vulkan!\n");
 	VulkanLoader::init();
 }
