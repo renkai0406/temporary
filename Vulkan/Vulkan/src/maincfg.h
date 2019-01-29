@@ -3,5 +3,6 @@
 
 #include <string>
 
+const std::string title = "vulkan learning";
 
 #endif

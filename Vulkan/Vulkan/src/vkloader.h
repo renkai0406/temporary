@@ -7,13 +7,12 @@
 #include "log.h"
 #include "appmng.h"
 
-#define APP_NAME "vulkan learning"
-
 const unsigned int GPU_NEEDED_COUNT = 1;
 
 struct VkInfo
 {
 	VkInstance instance;
+	VkSurfaceKHR surface;
 	VkDevice device;
 	std::vector<VkPhysicalDevice> gpus;
 	unsigned int gpuIndex;
@@ -27,19 +26,20 @@ class VulkanLoader
 public:
 	VulkanLoader();
 	~VulkanLoader();
-	static void init();
-	static void destory();
+	 void init(const std::string& title, GLFWwindow* glfwWin);
+	 void destory();
 private:
-	static void createInstance();
-	static void enumPhysicalDevice();
-	static void checkQueuiFamily(unsigned int gpuIndex);
-	static void createLogicalDevice();
-	static void createCommandPool();
-	static void createCommandBuffer();
-	static void createSuface();
+	 void createInstance(const std::string& title);
+	 void createSuface(GLFWwindow* glfwWin);
+	 void enumPhysicalDevice();
+	 void checkQueuiFamily(unsigned int gpuIndex);
+	 void createLogicalDevice();
+	 void createCommandPool();
+	 void createCommandBuffer();
+	
 
 private:
-	static VkInfo vkInfo;
+	 VkInfo vkInfo;
 
 };
 

@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "vkloader.h"
 
-VkInfo VulkanLoader::vkInfo;
-
 VulkanLoader::VulkanLoader()
 {
 }
@@ -12,9 +10,10 @@ VulkanLoader::~VulkanLoader()
 {
 }
 
-void VulkanLoader::init()
+void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 {
-	createInstance();
+	createInstance(title);
+	createSuface(glfwWin);
 	enumPhysicalDevice();
 	for (unsigned int i = 0; i < vkInfo.gpus.size(); i++)
 	{
@@ -34,15 +33,17 @@ void VulkanLoader::destory()
 	vkDeviceWaitIdle(vkInfo.device);
 	vkDestroyDevice(vkInfo.device, NULL);
 
+	vkDestroySurfaceKHR(vkInfo.instance, vkInfo.surface, nullptr);
+
 	vkDestroyInstance(vkInfo.instance, NULL);
 }
 
-void VulkanLoader::createInstance()
+void VulkanLoader::createInstance(const std::string& title)
 {
 	VkApplicationInfo appInfo = {};
-	appInfo.pApplicationName = APP_NAME;
+	appInfo.pApplicationName = title.c_str();
 	appInfo.applicationVersion = 1;
-	appInfo.pEngineName = APP_NAME;
+	appInfo.pEngineName = title.c_str();
 	appInfo.engineVersion = 1;
 	appInfo.apiVersion = VK_API_VERSION_1_0;
 
@@ -61,6 +62,11 @@ void VulkanLoader::createInstance()
 		AppManager::appExit();
 	}
 
+}
+
+void VulkanLoader::createSuface(GLFWwindow* glfwWin)
+{
+	VkResult result = glfwCreateWindowSurface(vkInfo.instance, glfwWin, NULL, &vkInfo.surface);
 }
 
 void VulkanLoader::enumPhysicalDevice()
@@ -148,7 +154,3 @@ void VulkanLoader::createCommandBuffer()
 	AppManager::appAssert(result == VK_SUCCESS, "something bad happened when allocating command buffers.");
 }
 
-void VulkanLoader::createSuface()
-{
-	VkSurfaceKHR surface;
-}
