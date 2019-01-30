@@ -15,8 +15,11 @@ struct VkInfo
 	VkSurfaceKHR surface;
 	VkDevice device;
 	std::vector<VkPhysicalDevice> gpus;
+	std::vector<VkQueueFamilyProperties> queueFamilyProps;
 	unsigned int gpuIndex;
-	unsigned int queueFamilyIndex;
+	//unsigned int queueFamilyIndex;
+	unsigned int graQueueFamilyIndex, preQueueFamilyIndex;
+	unsigned int queueFamilyCount;
 	VkCommandPool cpool;
 	VkCommandBuffer cbuffer;
 };
@@ -30,9 +33,10 @@ public:
 	 void destory();
 private:
 	 void createInstance(const std::string& title);
-	 void createSuface(GLFWwindow* glfwWin);
 	 void enumPhysicalDevice();
 	 void checkQueuiFamily(unsigned int gpuIndex);
+	 void createSurface(GLFWwindow* glfwWin);
+	 void createSwapChain();
 	 void createLogicalDevice();
 	 void createCommandPool();
 	 void createCommandBuffer();

@@ -13,12 +13,12 @@ VulkanLoader::~VulkanLoader()
 void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 {
 	createInstance(title);
-	createSuface(glfwWin);
 	enumPhysicalDevice();
 	for (unsigned int i = 0; i < vkInfo.gpus.size(); i++)
 	{
 		checkQueuiFamily(i);
 	}
+	createSurface(glfwWin);
 	createLogicalDevice();
 	createCommandPool();
 	createCommandBuffer();
@@ -64,11 +64,6 @@ void VulkanLoader::createInstance(const std::string& title)
 
 }
 
-void VulkanLoader::createSuface(GLFWwindow* glfwWin)
-{
-	VkResult result = glfwCreateWindowSurface(vkInfo.instance, glfwWin, NULL, &vkInfo.surface);
-}
-
 void VulkanLoader::enumPhysicalDevice()
 {
 	unsigned int gpuCount;
@@ -83,35 +78,86 @@ void VulkanLoader::enumPhysicalDevice()
 
 void VulkanLoader::checkQueuiFamily(unsigned int gpuIndex)
 {
-	unsigned int queueFamilyCount, i;
+	unsigned int i;
 	const VkPhysicalDevice& gpu = vkInfo.gpus[gpuIndex];
-	std::vector<VkQueueFamilyProperties> queueProps;
 
-	vkGetPhysicalDeviceQueueFamilyProperties(gpu, &queueFamilyCount, NULL);
-	AppManager::appAssert(queueFamilyCount >= 1, "there is no queue family found in this gpu.");
+	vkGetPhysicalDeviceQueueFamilyProperties(gpu, &vkInfo.queueFamilyCount, NULL);
+	AppManager::appAssert(vkInfo.queueFamilyCount >= 1, "there is no queue family found in this gpu.");
 
-	queueProps.resize(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(gpu, &queueFamilyCount, queueProps.data());
+	vkInfo.queueFamilyProps.resize(vkInfo.queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(gpu, &vkInfo.queueFamilyCount, vkInfo.queueFamilyProps.data());
 
 	Log::Instance()->log("print gpu info start.");
-	Log::Instance()->log("gpu:" + std::to_string(gpuIndex) + "\tfamily count:" + std::to_string(queueFamilyCount));
-	for (i = 0; i < queueFamilyCount; i++) 
+	Log::Instance()->log("gpu:" + std::to_string(gpuIndex) + "\tfamily count:" + std::to_string(vkInfo.queueFamilyCount));
+	for (i = 0; i < vkInfo.queueFamilyCount; i++)
 	{
 		std::string msg = "family:" + std::to_string(i) + "\t";
-		msg += "flag:" + std::to_string(queueProps[i].queueFlags);
-		msg += "\tcount:" + std::to_string(queueProps[i].queueCount);
-		msg += "\ttimestampValidBits:" + std::to_string(queueProps[i].timestampValidBits);
+		msg += "flag:" + std::to_string(vkInfo.queueFamilyProps[i].queueFlags);
+		msg += "\tcount:" + std::to_string(vkInfo.queueFamilyProps[i].queueCount);
+		msg += "\ttimestampValidBits:" + std::to_string(vkInfo.queueFamilyProps[i].timestampValidBits);
 		msg += "\tminImageTransferGranularity:" + 
-			std::to_string(queueProps[i].minImageTransferGranularity.width) + ','
-			+ std::to_string(queueProps[i].minImageTransferGranularity.height) + ','
-			+ std::to_string(queueProps[i].minImageTransferGranularity.depth);
+			std::to_string(vkInfo.queueFamilyProps[i].minImageTransferGranularity.width) + ','
+			+ std::to_string(vkInfo.queueFamilyProps[i].minImageTransferGranularity.height) + ','
+			+ std::to_string(vkInfo.queueFamilyProps[i].minImageTransferGranularity.depth);
 		Log::Instance()->log(msg);
-		if (queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+		if (vkInfo.queueFamilyProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			vkInfo.gpuIndex = gpuIndex;
-			vkInfo.queueFamilyIndex = i;
+			vkInfo.graQueueFamilyIndex = i;
 		}
 	}
 	Log::Instance()->log("print gpu info end.");
+}
+
+void VulkanLoader::createSurface(GLFWwindow* glfwWin)
+{
+	VkResult result = glfwCreateWindowSurface(vkInfo.instance, glfwWin, NULL, &vkInfo.surface);
+
+	AppManager::appAssert(result == VK_SUCCESS, "failed to create window surface.");
+
+	unsigned int i = 0;
+
+	std::vector<VkBool32> supported(vkInfo.queueFamilyCount);
+
+	for (i = 0; i < vkInfo.queueFamilyCount; i++) 
+	{
+		vkGetPhysicalDeviceSurfaceSupportKHR(vkInfo.gpus[vkInfo.gpuIndex], i, vkInfo.surface, &supported[i]);
+	}
+
+	bool sameFamily;
+	for (i = 0; i < vkInfo.queueFamilyCount; i++)
+	{//find a queue family that supports present and graphics mode.
+		if (vkInfo.queueFamilyProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT && supported[i])
+		{
+			vkInfo.graQueueFamilyIndex = i;
+			vkInfo.preQueueFamilyIndex = i;
+			sameFamily = true;
+			break;
+		}
+	}
+
+	if (!sameFamily)
+	{//if not found, find one only supports present mode.
+		for (i = 0; i < vkInfo.queueFamilyCount; i++)
+		{
+			VkBool32 supported = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(vkInfo.gpus[vkInfo.gpuIndex], i, vkInfo.surface, &supported);
+			if (supported)
+			{
+				vkInfo.preQueueFamilyIndex = i;
+				break;
+			}
+
+		}
+	}
+
+	
+}
+
+void VulkanLoader::createSwapChain()
+{
+	VkSwapchainCreateInfoKHR sccInfo = {};
+	sccInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	sccInfo.surface = vkInfo.surface;
 }
 
 void VulkanLoader::createLogicalDevice()
