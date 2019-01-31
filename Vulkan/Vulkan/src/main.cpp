@@ -8,6 +8,8 @@
 VulkanLoader vkloader;
 UI window;
 
+void init();
+
 int main()
 {
 	init();

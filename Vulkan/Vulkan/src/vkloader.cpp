@@ -14,11 +14,10 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 {
 	createInstance(title);
 	enumPhysicalDevice();
-	for (unsigned int i = 0; i < vkInfo.gpus.size(); i++)
-	{
-		checkQueuiFamily(i);
-	}
+	vkInfo.gpuIndex = 0;
+	checkQueuiFamily(vkInfo.gpuIndex);
 	createSurface(glfwWin);
+	createSwapChain();
 	createLogicalDevice();
 	createCommandPool();
 	createCommandBuffer();
@@ -155,9 +154,85 @@ void VulkanLoader::createSurface(GLFWwindow* glfwWin)
 
 void VulkanLoader::createSwapChain()
 {
+	VkSurfaceCapabilitiesKHR cap;
+	VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkInfo.gpus[vkInfo.gpuIndex], vkInfo.surface, &cap);
+	AppManager::appAssert(result == VK_SUCCESS, "cann't acquire surface capabilities in current physical device.");
+
+	VkFormat format;
+	uint32_t formatCount;
+	result = vkGetPhysicalDeviceSurfaceFormatsKHR(vkInfo.gpus[0], vkInfo.surface, &formatCount, NULL);
+	AppManager::appAssert(result == VK_SUCCESS, "something badly happened when acquiring count of surface formats.");
+	VkSurfaceFormatKHR *surfFormats = (VkSurfaceFormatKHR *)malloc(formatCount * sizeof(VkSurfaceFormatKHR));
+	result = vkGetPhysicalDeviceSurfaceFormatsKHR(vkInfo.gpus[0], vkInfo.surface, &formatCount, surfFormats);
+	AppManager::appAssert(result == VK_SUCCESS, "something badly happened when acquiring surface formats.");
+	if (formatCount == 1 && surfFormats[0].format == VK_FORMAT_UNDEFINED) {
+		format = VK_FORMAT_B8G8R8A8_UNORM;
+	}
+	else {
+		AppManager::appAssert(formatCount >= 1, "there exits no format in current physical device");
+		format = surfFormats[0].format;
+	}
+	free(surfFormats);
+
+	VkExtent2D swapchainExtent;
+	// width and height are either both 0xFFFFFFFF, or both not 0xFFFFFFFF.
+	if (cap.currentExtent.width == 0xFFFFFFFF) {
+		// If the surface size is undefined, the size is set to
+		// the size of the images requested.
+		swapchainExtent.width = vkInfo.width;
+		swapchainExtent.height = vkInfo.height;
+		if (swapchainExtent.width < cap.minImageExtent.width) {
+			swapchainExtent.width = cap.minImageExtent.width;
+		}
+		else if (swapchainExtent.width > cap.maxImageExtent.width) {
+			swapchainExtent.width = cap.maxImageExtent.width;
+		}
+
+		if (swapchainExtent.height < cap.minImageExtent.height) {
+			swapchainExtent.height = cap.minImageExtent.height;
+		}
+		else if (swapchainExtent.height > cap.maxImageExtent.height) {
+			swapchainExtent.height = cap.maxImageExtent.height;
+		}
+	}
+	else {
+		// If the surface size is defined, the swap chain size must match
+		swapchainExtent = cap.currentExtent;
+	}
+
+	VkSurfaceTransformFlagBitsKHR preTransform;
+	if (cap.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
+		preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+	}
+	else {
+		preTransform = cap.currentTransform;
+	}
+
 	VkSwapchainCreateInfoKHR sccInfo = {};
 	sccInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	sccInfo.surface = vkInfo.surface;
+	sccInfo.imageFormat = format;
+	sccInfo.minImageCount = cap.minImageCount;
+	sccInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+	sccInfo.imageExtent.width = swapchainExtent.width;
+	sccInfo.imageExtent.height = swapchainExtent.height;
+	sccInfo.preTransform = preTransform;
+
+	sccInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	
+	if (vkInfo.graQueueFamilyIndex != vkInfo.preQueueFamilyIndex) {
+		uint32_t queueFamilyIndices[2] = 
+		{
+			(uint32_t)vkInfo.graQueueFamilyIndex,
+			(uint32_t)vkInfo.preQueueFamilyIndex 
+		};
+		sccInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		sccInfo.queueFamilyIndexCount = 2;
+		sccInfo.pQueueFamilyIndices = queueFamilyIndices;
+	}
+
+	result = vkCreateSwapchainKHR(vkInfo.device, &sccInfo, NULL, &vkInfo.swapchain);
+	AppManager::appAssert(result == VK_SUCCESS, "something wrong happened when creating swap chain");
 }
 
 void VulkanLoader::createLogicalDevice()
@@ -167,7 +242,7 @@ void VulkanLoader::createLogicalDevice()
 	qcInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	qcInfo.queueCount = 1;
 	qcInfo.pQueuePriorities = queuePriorityes;
-	qcInfo.queueFamilyIndex = vkInfo.queueFamilyIndex;
+	qcInfo.queueFamilyIndex = vkInfo.graQueueFamilyIndex;
 
 	VkDeviceCreateInfo devInfo = {};
 	devInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -182,7 +257,7 @@ void VulkanLoader::createCommandPool()
 {
 	VkCommandPoolCreateInfo cpInfo = {};
 	cpInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	cpInfo.queueFamilyIndex = vkInfo.queueFamilyIndex;
+	cpInfo.queueFamilyIndex = vkInfo.graQueueFamilyIndex;
 
 	VkResult result = vkCreateCommandPool(vkInfo.device, &cpInfo, NULL, &vkInfo.cpool);
 	AppManager::appAssert(result == VK_SUCCESS, "something bad happened when creating command pool.");

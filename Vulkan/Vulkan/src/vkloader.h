@@ -12,14 +12,16 @@ const unsigned int GPU_NEEDED_COUNT = 1;
 struct VkInfo
 {
 	VkInstance instance;
-	VkSurfaceKHR surface;
-	VkDevice device;
 	std::vector<VkPhysicalDevice> gpus;
-	std::vector<VkQueueFamilyProperties> queueFamilyProps;
 	unsigned int gpuIndex;
+	VkDevice device;
+	VkSurfaceKHR surface;
+	VkSwapchainKHR swapchain;
+	unsigned int width, height;
 	//unsigned int queueFamilyIndex;
 	unsigned int graQueueFamilyIndex, preQueueFamilyIndex;
 	unsigned int queueFamilyCount;
+	std::vector<VkQueueFamilyProperties> queueFamilyProps;
 	VkCommandPool cpool;
 	VkCommandBuffer cbuffer;
 };
