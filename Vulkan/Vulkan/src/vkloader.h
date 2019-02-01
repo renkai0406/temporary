@@ -24,6 +24,7 @@ struct VkInfo
 	std::vector<VkQueueFamilyProperties> queueFamilyProps;
 	VkCommandPool cpool;
 	VkCommandBuffer cbuffer;
+	bool enableLayers;
 };
 
 class VulkanLoader
@@ -42,6 +43,7 @@ private:
 	 void createLogicalDevice();
 	 void createCommandPool();
 	 void createCommandBuffer();
+	 std::vector<const char*> getRequiredExtensions();
 	
 
 private:

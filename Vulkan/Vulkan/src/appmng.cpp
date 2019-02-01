@@ -20,8 +20,8 @@ void AppManager::appExit()
 void AppManager::appAssert(int exp, std::string msg)
 {
 	if (exp <= 0) {
+		//throw std::runtime_error(msg);
 		Log::Instance()->error(msg);
 		appExit();
 	}
-	//assert(exp);
 }

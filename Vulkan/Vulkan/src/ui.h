@@ -14,8 +14,10 @@ class UI
 {
 public:
 	void init(const std::string& title);
+	void mainloop();
+	void clearup();
 	GLFWwindow* getGlfwWindow();
-	int win_width, win_height;
+	int win_width = 1024, win_height = 768;
 private:
 	GLFWwindow * window;
 	

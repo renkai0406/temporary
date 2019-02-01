@@ -16,9 +16,10 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 	enumPhysicalDevice();
 	vkInfo.gpuIndex = 0;
 	checkQueuiFamily(vkInfo.gpuIndex);
+	createLogicalDevice();
 	createSurface(glfwWin);
 	createSwapChain();
-	createLogicalDevice();
+	
 	createCommandPool();
 	createCommandBuffer();
 }
@@ -41,15 +42,23 @@ void VulkanLoader::createInstance(const std::string& title)
 {
 	VkApplicationInfo appInfo = {};
 	appInfo.pApplicationName = title.c_str();
-	appInfo.applicationVersion = 1;
-	appInfo.pEngineName = title.c_str();
-	appInfo.engineVersion = 1;
+	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+	appInfo.pEngineName = "No Engine";
+	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.apiVersion = VK_API_VERSION_1_0;
 
 
 	VkInstanceCreateInfo icInfo = {};
 	icInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	icInfo.pApplicationInfo = &appInfo;
+
+	uint32_t glfwExtensionCount = 0;
+	const char** glfwExtensions;
+
+	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+	icInfo.enabledExtensionCount = glfwExtensionCount;
+	icInfo.ppEnabledExtensionNames = glfwExtensions;
 
 	VkResult result;
 	if ((result = vkCreateInstance(&icInfo, NULL, &vkInfo.instance)) == VK_ERROR_INCOMPATIBLE_DRIVER) {
@@ -112,7 +121,6 @@ void VulkanLoader::createSurface(GLFWwindow* glfwWin)
 	VkResult result = glfwCreateWindowSurface(vkInfo.instance, glfwWin, NULL, &vkInfo.surface);
 
 	AppManager::appAssert(result == VK_SUCCESS, "failed to create window surface.");
-
 	unsigned int i = 0;
 
 	std::vector<VkBool32> supported(vkInfo.queueFamilyCount);
@@ -217,9 +225,14 @@ void VulkanLoader::createSwapChain()
 	sccInfo.imageExtent.width = swapchainExtent.width;
 	sccInfo.imageExtent.height = swapchainExtent.height;
 	sccInfo.preTransform = preTransform;
+	sccInfo.oldSwapchain = VK_NULL_HANDLE;
+	sccInfo.clipped = true;
+	sccInfo.imageColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
+	sccInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 	sccInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	
+	sccInfo.queueFamilyIndexCount = 0;
+	sccInfo.pQueueFamilyIndices = nullptr;
 	if (vkInfo.graQueueFamilyIndex != vkInfo.preQueueFamilyIndex) {
 		uint32_t queueFamilyIndices[2] = 
 		{
@@ -231,7 +244,7 @@ void VulkanLoader::createSwapChain()
 		sccInfo.pQueueFamilyIndices = queueFamilyIndices;
 	}
 
-	result = vkCreateSwapchainKHR(vkInfo.device, &sccInfo, NULL, &vkInfo.swapchain);
+	result = vkCreateSwapchainKHR(vkInfo.device, &sccInfo, nullptr, &vkInfo.swapchain);
 	AppManager::appAssert(result == VK_SUCCESS, "something wrong happened when creating swap chain");
 }
 
@@ -273,5 +286,20 @@ void VulkanLoader::createCommandBuffer()
 
 	VkResult result = vkAllocateCommandBuffers(vkInfo.device, &cbaInfo, &vkInfo.cbuffer);
 	AppManager::appAssert(result == VK_SUCCESS, "something bad happened when allocating command buffers.");
+}
+
+std::vector<const char*> VulkanLoader::getRequiredExtensions()
+{
+	uint32_t glfwExtensionCount = 0;
+	const char** glfwExtensions;
+	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+	if (vkInfo.enableLayers) {
+		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	}
+
+	return extensions;
 }
 

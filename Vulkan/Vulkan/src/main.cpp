@@ -9,15 +9,24 @@ VulkanLoader vkloader;
 UI window;
 
 void init();
+void run();
+void clearup();
 
 int main()
 {
-	init();
-	
-	Log::Instance()->log("the program has done,press any key to continue...");
-	std::getchar();
-	return 0;
-	//VulkanLoader::destory();
+	try
+	{
+		init();
+		run();
+		clearup();
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	return EXIT_SUCCESS;
 }
 
 void init() {
@@ -25,4 +34,17 @@ void init() {
 	Log::Instance()->log("Hello Vulkan!\n");
 	window.init(title);
 	vkloader.init(title, window.getGlfwWindow());
+}
+
+void run()
+{
+	window.mainloop();
+}
+
+void clearup()
+{
+	window.clearup();
+	//VulkanLoader::destory();
+	Log::Instance()->log("the program has done,press any key to continue...");
+	std::getchar();
 }

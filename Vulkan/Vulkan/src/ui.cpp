@@ -5,17 +5,11 @@
 void UI::init(const std::string& title)
 {
 	glfwInit();
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	window = glfwCreateWindow(win_width, win_height, title.c_str(), NULL, NULL);
 
-	if (window == NULL)
-	{
-		Log::Instance()->error("failed to create glfw window");
-		AppManager::appExit();
-	}
+	AppManager::appAssert(window != NULL, "failed to create glfw window.");
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_resize_callback);
 	glfwSetKeyCallback(window, key_callback);
@@ -25,6 +19,20 @@ void UI::init(const std::string& title)
 
 	glfwMakeContextCurrent(window);
 	
+}
+
+void UI::mainloop()
+{
+	while (glfwWindowShouldClose(window))
+	{
+		glfwPollEvents();
+	}
+}
+
+void UI::clearup()
+{
+	glfwDestroyWindow(window);
+	glfwTerminate();
 }
 
 GLFWwindow * UI::getGlfwWindow()
