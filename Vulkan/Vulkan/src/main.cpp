@@ -38,13 +38,18 @@ void init() {
 
 void run()
 {
-	window.mainloop();
+	while (!window.shouldCloseWin())
+	{
+		window.mainloop();
+	}
+	
 }
 
 void clearup()
 {
+	
+	vkloader.clearup();
 	window.clearup();
-	//VulkanLoader::destory();
 	Log::Instance()->log("the program has done,press any key to continue...");
 	std::getchar();
 }

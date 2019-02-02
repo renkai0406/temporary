@@ -24,7 +24,7 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 	createCommandBuffer();
 }
 
-void VulkanLoader::destory()
+void VulkanLoader::clearup()
 {
 	vkFreeCommandBuffers(vkInfo.device, vkInfo.cpool, 1, &vkInfo.cbuffer);
 	
@@ -40,6 +40,9 @@ void VulkanLoader::destory()
 
 void VulkanLoader::createInstance(const std::string& title)
 {
+
+	AppManager::appAssert(!layersEnabled || layersEnabled && checkLayersSupport(), "validation layers requested, but not available!");
+
 	VkApplicationInfo appInfo = {};
 	appInfo.pApplicationName = title.c_str();
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -52,23 +55,45 @@ void VulkanLoader::createInstance(const std::string& title)
 	icInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	icInfo.pApplicationInfo = &appInfo;
 
+	if (layersEnabled) {
+		icInfo.enabledLayerCount = static_cast<uint32_t>(vkInfo.layers.size());
+		icInfo.ppEnabledLayerNames = vkInfo.layers.data();
+	}
+	else {
+		icInfo.enabledLayerCount = 0;
+	}
+
+	//acquire the extensition data.
 	uint32_t glfwExtensionCount = 0;
 	const char** glfwExtensions;
-
 	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-	icInfo.enabledExtensionCount = glfwExtensionCount;
-	icInfo.ppEnabledExtensionNames = glfwExtensions;
-
-	VkResult result;
-	if ((result = vkCreateInstance(&icInfo, NULL, &vkInfo.instance)) == VK_ERROR_INCOMPATIBLE_DRIVER) {
-		Log::Instance()->log("cannot find a compatible Vulkan ICD");
-		AppManager::appExit();
+	
+	//add debug utils extension.
+	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+	if (layersEnabled)
+	{
+		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
-	else if (result) {
-		Log::Instance()->log("unknown error:" + result);
-		AppManager::appExit();
-	}
+	AppManager::appAssert(checkExtensionsSupport(extensions), "there exit some extensions required that can't be supported.");
+
+	//fill the extension data.
+	icInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+	icInfo.ppEnabledExtensionNames = extensions.data();
+
+	VkResult result = vkCreateInstance(&icInfo, NULL, &vkInfo.instance);
+	AppManager::appAssert(result == VK_SUCCESS, "someting wrong happened when creating the vulkan instance.");
+
+}
+
+void VulkanLoader::setupDebugMessenger()
+{
+	if (!layersEnabled)return;
+	VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+	createInfo.pfnUserCallback = debugCallback;
+	createInfo.pUserData = nullptr; // Optional
 
 }
 
@@ -288,18 +313,69 @@ void VulkanLoader::createCommandBuffer()
 	AppManager::appAssert(result == VK_SUCCESS, "something bad happened when allocating command buffers.");
 }
 
-std::vector<const char*> VulkanLoader::getRequiredExtensions()
+bool VulkanLoader::checkLayersSupport()
 {
-	uint32_t glfwExtensionCount = 0;
-	const char** glfwExtensions;
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+	//get all the layers that the insance supports.
+	uint32_t layerCount;
+	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+	std::vector<VkLayerProperties> availableLayers(layerCount);
+	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+	for (const char* layerName : vkInfo.layers) {
+		bool layerFound = false;
 
-	if (vkInfo.enableLayers) {
-		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		for (const auto& layerProperties : availableLayers) {
+			if (strcmp(layerName, layerProperties.layerName) == 0) {
+				layerFound = true;
+				break;
+			}
+		}
+
+		if (!layerFound) {
+			return false;
+		}
 	}
 
-	return extensions;
+	return true;
 }
+
+bool VulkanLoader::checkExtensionsSupport(const std::vector<const char*>& needs)
+{
+	unsigned int needsCount = needs.size();
+	uint32_t supportsCount = 0;
+	vkEnumerateInstanceExtensionProperties(nullptr, &supportsCount, nullptr);
+	std::vector<VkExtensionProperties> sextensions(supportsCount);
+	vkEnumerateInstanceExtensionProperties(nullptr, &supportsCount, sextensions.data());
+
+	std::vector<std::string> sextensionsNames;
+
+	for(const auto& extension : sextensions)
+	{
+		sextensionsNames.insert(sextensionsNames.end(), extension.extensionName);
+	}
+
+	for (unsigned int i = 0; i < needsCount; i++)
+	{
+		auto it = std::find(sextensionsNames.begin(), sextensionsNames.end(), needs[i]);
+		if (it == sextensionsNames.end())
+			return false;
+	}
+
+	return true;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL VulkanLoader::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT * pCallbackData, void * pUserData)
+{
+	if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+		// Message is important enough to show
+	}
+
+	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+	return VK_FALSE;
+}
+
+
+
+
 

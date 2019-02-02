@@ -23,16 +23,18 @@ void UI::init(const std::string& title)
 
 void UI::mainloop()
 {
-	while (glfwWindowShouldClose(window))
-	{
 		glfwPollEvents();
-	}
 }
 
 void UI::clearup()
 {
 	glfwDestroyWindow(window);
 	glfwTerminate();
+}
+
+bool UI::shouldCloseWin()
+{
+	return glfwWindowShouldClose(window);
 }
 
 GLFWwindow * UI::getGlfwWindow()

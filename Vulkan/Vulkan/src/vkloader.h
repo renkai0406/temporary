@@ -7,11 +7,21 @@
 #include "log.h"
 #include "appmng.h"
 
+#ifdef NDEBUG
+const bool layersEnabled = false;
+#else
+const bool layersEnabled = true;
+#endif
+
 const unsigned int GPU_NEEDED_COUNT = 1;
 
 struct VkInfo
 {
 	VkInstance instance;
+	//the layers we needed.
+	const std::vector<const char*> layers = {
+	"VK_LAYER_LUNARG_standard_validation"};
+	VkDebugUtilsMessengerEXT debugMessenger;
 	std::vector<VkPhysicalDevice> gpus;
 	unsigned int gpuIndex;
 	VkDevice device;
@@ -33,9 +43,10 @@ public:
 	VulkanLoader();
 	~VulkanLoader();
 	 void init(const std::string& title, GLFWwindow* glfwWin);
-	 void destory();
+	 void clearup();
 private:
 	 void createInstance(const std::string& title);
+	 void setupDebugMessenger();
 	 void enumPhysicalDevice();
 	 void checkQueuiFamily(unsigned int gpuIndex);
 	 void createSurface(GLFWwindow* glfwWin);
@@ -43,7 +54,14 @@ private:
 	 void createLogicalDevice();
 	 void createCommandPool();
 	 void createCommandBuffer();
-	 std::vector<const char*> getRequiredExtensions();
+	 bool checkLayersSupport();
+	 bool checkExtensionsSupport(const std::vector<const char*>& needs);
+	 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+		 VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		 VkDebugUtilsMessageTypeFlagsEXT messageType,
+		 const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		 void* pUserData);
+	
 	
 
 private:

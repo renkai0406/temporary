@@ -16,6 +16,7 @@ public:
 	void init(const std::string& title);
 	void mainloop();
 	void clearup();
+	bool shouldCloseWin();
 	GLFWwindow* getGlfwWindow();
 	int win_width = 1024, win_height = 768;
 private:
