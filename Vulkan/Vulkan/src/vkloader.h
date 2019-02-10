@@ -7,12 +7,6 @@
 #include "log.h"
 #include "appmng.h"
 
-#ifdef NDEBUG
-const bool layersEnabled = false;
-#else
-const bool layersEnabled = true;
-#endif
-
 const unsigned int GPU_NEEDED_COUNT = 1;
 
 struct VkInfo
@@ -34,7 +28,11 @@ struct VkInfo
 	std::vector<VkQueueFamilyProperties> queueFamilyProps;
 	VkCommandPool cpool;
 	VkCommandBuffer cbuffer;
-	bool enableLayers;
+#ifdef NDEBUG
+	const bool layersEnabled = false;
+#else
+	const bool layersEnabled = true;
+#endif
 };
 
 class VulkanLoader
@@ -61,6 +59,8 @@ private:
 		 VkDebugUtilsMessageTypeFlagsEXT messageType,
 		 const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		 void* pUserData);
+	 VkResult CreateDebugUtilsMessengerEXT(const VkInstance &instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
+	 void DestroyDebugUtilsMessengerEXT(const VkInstance &instance, VkDebugUtilsMessengerEXT &debugMessenger, const VkAllocationCallbacks* pAllocator);
 	
 	
 
@@ -70,4 +70,5 @@ private:
 };
 
 #endif //VKLOADER_H!
+
 
