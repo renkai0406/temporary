@@ -14,7 +14,7 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 {
 	createInstance(title);
 	setupDebugMessenger();
-	enumPhysicalDevice();
+	pickPhysicalDevice();
 	vkInfo.gpuIndex = 0;
 	checkQueuiFamily(vkInfo.gpuIndex);
 	createLogicalDevice();
@@ -105,16 +105,16 @@ void VulkanLoader::setupDebugMessenger()
 
 }
 
-void VulkanLoader::enumPhysicalDevice()
+void VulkanLoader::pickPhysicalDevice()
 {
 	unsigned int gpuCount;
 	// Get the number of devices (GPUs) available.
 	VkResult res = vkEnumeratePhysicalDevices(vkInfo.instance, &gpuCount, NULL);
 	AppManager::appAssert(gpuCount >= GPU_NEEDED_COUNT, "the number of gpu is less than needed.");
 	// Allocate space and get the list of devices.
-	vkInfo.gpus.resize(gpuCount);
-	res = vkEnumeratePhysicalDevices(vkInfo.instance, &gpuCount, vkInfo.gpus.data());
-	AppManager::appAssert(!res, "something bad happened when enumerating physic devices.");
+	std::vector<VkPhysicalDevice> gpus(gpuCount);
+	res = vkEnumeratePhysicalDevices(vkInfo.instance, &gpuCount, gpus.data());
+	AppManager::appAssert(res == VK_SUCCESS, "something bad happened when enumerating physic devices.");
 }
 
 void VulkanLoader::checkQueuiFamily(unsigned int gpuIndex)
@@ -397,6 +397,18 @@ void VulkanLoader::DestroyDebugUtilsMessengerEXT(const VkInstance &instance, VkD
 	if (func != nullptr) {
 		func(instance, debugMessenger, pAllocator);
 	}
+}
+
+bool VulkanLoader::isDeviceSuitable(VkPhysicalDevice & device)
+{
+	VkPhysicalDeviceProperties deviceProperties;
+	VkPhysicalDeviceFeatures deviceFeatures;
+	vkGetPhysicalDeviceProperties(device, &deviceProperties);
+	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+	return 
+		deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+		deviceFeatures.geometryShader;
 }
 
 

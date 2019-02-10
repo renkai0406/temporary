@@ -16,7 +16,7 @@ struct VkInfo
 	const std::vector<const char*> layers = {
 	"VK_LAYER_LUNARG_standard_validation"};
 	VkDebugUtilsMessengerEXT debugMessenger;
-	std::vector<VkPhysicalDevice> gpus;
+	VkPhysicalDevice gpu;
 	unsigned int gpuIndex;
 	VkDevice device;
 	VkSurfaceKHR surface;
@@ -45,7 +45,7 @@ public:
 private:
 	 void createInstance(const std::string& title);
 	 void setupDebugMessenger();
-	 void enumPhysicalDevice();
+	 void pickPhysicalDevice();
 	 void checkQueuiFamily(unsigned int gpuIndex);
 	 void createSurface(GLFWwindow* glfwWin);
 	 void createSwapChain();
@@ -61,6 +61,7 @@ private:
 		 void* pUserData);
 	 VkResult CreateDebugUtilsMessengerEXT(const VkInstance &instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 	 void DestroyDebugUtilsMessengerEXT(const VkInstance &instance, VkDebugUtilsMessengerEXT &debugMessenger, const VkAllocationCallbacks* pAllocator);
+	 bool isDeviceSuitable(VkPhysicalDevice& device);
 	
 	
 
