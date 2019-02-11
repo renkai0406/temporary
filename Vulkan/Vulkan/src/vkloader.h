@@ -45,11 +45,11 @@ private:
 	 void setupDebugMessenger();
 	 void pickPhysicalDevice();
 	 void checkQueuiFamily();
-	 void createSurface(GLFWwindow* glfwWin);
-	 void createSwapChain();
+	 //void createSurface(GLFWwindow* glfwWin);
+	 //void createSwapChain();
 	 void createLogicalDevice();
-	 void createCommandPool();
-	 void createCommandBuffer();
+	 //void createCommandPool();
+	 //void createCommandBuffer();
 	 bool checkLayersSupport();
 	 bool checkExtensionsSupport(const std::vector<const char*>& needs);
 	 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(

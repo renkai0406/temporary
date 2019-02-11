@@ -17,23 +17,23 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 	pickPhysicalDevice();
 	checkQueuiFamily();
 	createLogicalDevice();
-	createSurface(glfwWin);
+	/*createSurface(glfwWin);
 	createSwapChain();
 	
 	createCommandPool();
-	createCommandBuffer();
+	createCommandBuffer();*/
 }
 
 void VulkanLoader::clearup()
 {
-	vkFreeCommandBuffers(vkInfo.device, vkInfo.cpool, 1, &vkInfo.cbuffer);
+	//vkFreeCommandBuffers(vkInfo.device, vkInfo.cpool, 1, &vkInfo.cbuffer);
 	
-	vkDestroyCommandPool(vkInfo.device, vkInfo.cpool, NULL);
+	//vkDestroyCommandPool(vkInfo.device, vkInfo.cpool, NULL);
 
 	vkDeviceWaitIdle(vkInfo.device);
 	vkDestroyDevice(vkInfo.device, NULL);
 
-	vkDestroySurfaceKHR(vkInfo.instance, vkInfo.surface, nullptr);
+	//vkDestroySurfaceKHR(vkInfo.instance, vkInfo.surface, nullptr);
 
 	if (vkInfo.layersEnabled) {
 		DestroyDebugUtilsMessengerEXT(vkInfo.instance, vkInfo.debugMessenger, nullptr);
@@ -151,7 +151,7 @@ void VulkanLoader::checkQueuiFamily()
 	Log::Instance()->log("print gpu info end.");
 }
 
-void VulkanLoader::createSurface(GLFWwindow* glfwWin)
+/*void VulkanLoader::createSurface(GLFWwindow* glfwWin)
 {
 	VkResult result = glfwCreateWindowSurface(vkInfo.instance, glfwWin, NULL, &vkInfo.surface);
 
@@ -193,9 +193,9 @@ void VulkanLoader::createSurface(GLFWwindow* glfwWin)
 	}
 
 	
-}
+}*/
 
-void VulkanLoader::createSwapChain()
+/*void VulkanLoader::createSwapChain()
 {
 	VkSurfaceCapabilitiesKHR cap;
 	VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkInfo.gpus[vkInfo.gpuIndex], vkInfo.surface, &cap);
@@ -281,7 +281,7 @@ void VulkanLoader::createSwapChain()
 
 	result = vkCreateSwapchainKHR(vkInfo.device, &sccInfo, nullptr, &vkInfo.swapchain);
 	AppManager::appAssert(result == VK_SUCCESS, "something wrong happened when creating swap chain");
-}
+}*/
 
 void VulkanLoader::createLogicalDevice()
 {
@@ -297,11 +297,19 @@ void VulkanLoader::createLogicalDevice()
 	devInfo.queueCreateInfoCount = 1;
 	devInfo.pQueueCreateInfos = &qcInfo;
 
+	if (vkInfo.layersEnabled) {
+		devInfo.enabledLayerCount = static_cast<uint32_t>(vkInfo.layers.size());
+		devInfo.ppEnabledLayerNames = vkInfo.layers.data();
+	}
+	else {
+		devInfo.enabledLayerCount = 0;
+	}
+
 	VkResult result = vkCreateDevice(vkInfo.gpu, &devInfo, NULL, &vkInfo.device);
 	AppManager::appAssert(result == VK_SUCCESS, "something bad happened when creating device.");
 }
 
-void VulkanLoader::createCommandPool()
+/*void VulkanLoader::createCommandPool()
 {
 	VkCommandPoolCreateInfo cpInfo = {};
 	cpInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -321,7 +329,7 @@ void VulkanLoader::createCommandBuffer()
 
 	VkResult result = vkAllocateCommandBuffers(vkInfo.device, &cbaInfo, &vkInfo.cbuffer);
 	AppManager::appAssert(result == VK_SUCCESS, "something bad happened when allocating command buffers.");
-}
+}*/
 
 bool VulkanLoader::checkLayersSupport()
 {
@@ -403,7 +411,7 @@ void VulkanLoader::DestroyDebugUtilsMessengerEXT(const VkInstance &instance, VkD
 
 int VulkanLoader::rateDeviceSuitability(VkPhysicalDevice & device)
 {
-	int score;
+	int score = 0;
 
 	VkPhysicalDeviceProperties deviceProperties;
 	VkPhysicalDeviceFeatures deviceFeatures;
