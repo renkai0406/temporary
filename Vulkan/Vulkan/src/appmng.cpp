@@ -25,3 +25,9 @@ void AppManager::appAssert(int exp, std::string msg)
 		appExit();
 	}
 }
+
+void AppManager::appError(std::string msg)
+{
+	Log::Instance()->error(msg);
+	appExit();
+}

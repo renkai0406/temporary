@@ -12,6 +12,7 @@ public:
 	~AppManager();
 	static void appExit();
 	static void appAssert(int exp, std::string msg);
+	static void appError(std::string msg);
 };
 
 #endif

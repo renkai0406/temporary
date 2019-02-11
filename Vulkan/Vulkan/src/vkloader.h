@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include <vector>
+#include <map>
 #include "log.h"
 #include "appmng.h"
 
@@ -17,15 +18,12 @@ struct VkInfo
 	"VK_LAYER_LUNARG_standard_validation"};
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice gpu;
-	unsigned int gpuIndex;
 	VkDevice device;
 	VkSurfaceKHR surface;
 	VkSwapchainKHR swapchain;
 	unsigned int width, height;
 	//unsigned int queueFamilyIndex;
 	unsigned int graQueueFamilyIndex, preQueueFamilyIndex;
-	unsigned int queueFamilyCount;
-	std::vector<VkQueueFamilyProperties> queueFamilyProps;
 	VkCommandPool cpool;
 	VkCommandBuffer cbuffer;
 #ifdef NDEBUG
@@ -46,7 +44,7 @@ private:
 	 void createInstance(const std::string& title);
 	 void setupDebugMessenger();
 	 void pickPhysicalDevice();
-	 void checkQueuiFamily(unsigned int gpuIndex);
+	 void checkQueuiFamily();
 	 void createSurface(GLFWwindow* glfwWin);
 	 void createSwapChain();
 	 void createLogicalDevice();
@@ -61,7 +59,7 @@ private:
 		 void* pUserData);
 	 VkResult CreateDebugUtilsMessengerEXT(const VkInstance &instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 	 void DestroyDebugUtilsMessengerEXT(const VkInstance &instance, VkDebugUtilsMessengerEXT &debugMessenger, const VkAllocationCallbacks* pAllocator);
-	 bool isDeviceSuitable(VkPhysicalDevice& device);
+	 int rateDeviceSuitability(VkPhysicalDevice& device);
 	
 	
 

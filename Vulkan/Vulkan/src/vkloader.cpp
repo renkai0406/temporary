@@ -15,8 +15,7 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 	createInstance(title);
 	setupDebugMessenger();
 	pickPhysicalDevice();
-	vkInfo.gpuIndex = 0;
-	checkQueuiFamily(vkInfo.gpuIndex);
+	checkQueuiFamily();
 	createLogicalDevice();
 	createSurface(glfwWin);
 	createSwapChain();
@@ -115,34 +114,37 @@ void VulkanLoader::pickPhysicalDevice()
 	std::vector<VkPhysicalDevice> gpus(gpuCount);
 	res = vkEnumeratePhysicalDevices(vkInfo.instance, &gpuCount, gpus.data());
 	AppManager::appAssert(res == VK_SUCCESS, "something bad happened when enumerating physic devices.");
+
+	std::multimap<int, VkPhysicalDevice> candidates;
+	for (auto gpu : gpus) {
+		int score = rateDeviceSuitability(gpu);
+		candidates.insert(std::make_pair(score, gpu));
+	}
+
+	if (candidates.rbegin()->first > 0) {
+		vkInfo.gpu = candidates.rbegin()->second;
+	}
+	else {
+		AppManager::appError("failed to find a suitable GPU.");
+	}
+
 }
 
-void VulkanLoader::checkQueuiFamily(unsigned int gpuIndex)
+void VulkanLoader::checkQueuiFamily()
 {
-	unsigned int i;
-	const VkPhysicalDevice& gpu = vkInfo.gpus[gpuIndex];
+	unsigned int i, queueFamilyCount;
+	const VkPhysicalDevice& gpu = vkInfo.gpu;
 
-	vkGetPhysicalDeviceQueueFamilyProperties(gpu, &vkInfo.queueFamilyCount, NULL);
-	AppManager::appAssert(vkInfo.queueFamilyCount >= 1, "there is no queue family found in this gpu.");
+	vkGetPhysicalDeviceQueueFamilyProperties(gpu, &queueFamilyCount, NULL);
+	AppManager::appAssert(queueFamilyCount >= 1, "there is no queue family found in this gpu.");
 
-	vkInfo.queueFamilyProps.resize(vkInfo.queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(gpu, &vkInfo.queueFamilyCount, vkInfo.queueFamilyProps.data());
+	std::vector<VkQueueFamilyProperties> queueFamilyProps(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(gpu, &queueFamilyCount, queueFamilyProps.data());
 
-	Log::Instance()->log("print gpu info start.");
-	Log::Instance()->log("gpu:" + std::to_string(gpuIndex) + "\tfamily count:" + std::to_string(vkInfo.queueFamilyCount));
-	for (i = 0; i < vkInfo.queueFamilyCount; i++)
+	for (i = 0; i < queueFamilyCount; i++)
 	{
-		std::string msg = "family:" + std::to_string(i) + "\t";
-		msg += "flag:" + std::to_string(vkInfo.queueFamilyProps[i].queueFlags);
-		msg += "\tcount:" + std::to_string(vkInfo.queueFamilyProps[i].queueCount);
-		msg += "\ttimestampValidBits:" + std::to_string(vkInfo.queueFamilyProps[i].timestampValidBits);
-		msg += "\tminImageTransferGranularity:" + 
-			std::to_string(vkInfo.queueFamilyProps[i].minImageTransferGranularity.width) + ','
-			+ std::to_string(vkInfo.queueFamilyProps[i].minImageTransferGranularity.height) + ','
-			+ std::to_string(vkInfo.queueFamilyProps[i].minImageTransferGranularity.depth);
-		Log::Instance()->log(msg);
-		if (vkInfo.queueFamilyProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-			vkInfo.gpuIndex = gpuIndex;
+
+		if (queueFamilyProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			vkInfo.graQueueFamilyIndex = i;
 		}
 	}
@@ -295,7 +297,7 @@ void VulkanLoader::createLogicalDevice()
 	devInfo.queueCreateInfoCount = 1;
 	devInfo.pQueueCreateInfos = &qcInfo;
 
-	VkResult result = vkCreateDevice(vkInfo.gpus[vkInfo.gpuIndex], &devInfo, NULL, &vkInfo.device);
+	VkResult result = vkCreateDevice(vkInfo.gpu, &devInfo, NULL, &vkInfo.device);
 	AppManager::appAssert(result == VK_SUCCESS, "something bad happened when creating device.");
 }
 
@@ -399,17 +401,27 @@ void VulkanLoader::DestroyDebugUtilsMessengerEXT(const VkInstance &instance, VkD
 	}
 }
 
-bool VulkanLoader::isDeviceSuitable(VkPhysicalDevice & device)
+int VulkanLoader::rateDeviceSuitability(VkPhysicalDevice & device)
 {
+	int score;
+
 	VkPhysicalDeviceProperties deviceProperties;
 	VkPhysicalDeviceFeatures deviceFeatures;
 	vkGetPhysicalDeviceProperties(device, &deviceProperties);
 	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-	return 
-		deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-		deviceFeatures.geometryShader;
+	if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+		score += 10;
+
+	score += deviceProperties.limits.maxImageDimension2D;
+
+	if (!deviceFeatures.geometryShader) {
+		return 0;
+	}
+
+	return score;
 }
+
 
 
 
