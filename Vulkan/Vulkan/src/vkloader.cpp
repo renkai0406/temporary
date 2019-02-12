@@ -19,9 +19,9 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 	checkQueueFamily();
 	createLogicalDevice();
 	
-	/*createSwapChain();
+	//createSwapChain();
 	
-	createCommandPool();
+	/*createCommandPool();
 	createCommandBuffer();*/
 }
 
@@ -105,6 +105,12 @@ void VulkanLoader::setupDebugMessenger()
 
 }
 
+void VulkanLoader::createSurface(GLFWwindow* glfwWin)
+{
+	VkResult result = glfwCreateWindowSurface(vkInfo.instance, glfwWin, NULL, &vkInfo.surface);
+	AppManager::appAssert(result == VK_SUCCESS, "failed to create window surface.");
+}
+
 void VulkanLoader::pickPhysicalDevice()
 {
 	unsigned int gpuCount;
@@ -137,18 +143,33 @@ void VulkanLoader::checkQueueFamily()
 	const VkPhysicalDevice& gpu = vkInfo.gpu;
 
 	vkGetPhysicalDeviceQueueFamilyProperties(gpu, &queueFamilyCount, NULL);
-	AppManager::appAssert(queueFamilyCount >= 1, "there is no queue family found in this gpu.");
+	AppManager::appAssert(queueFamilyCount > 0, "there is no queue family found in this gpu.");
 
 	std::vector<VkQueueFamilyProperties> queueFamilyProps(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(gpu, &queueFamilyCount, queueFamilyProps.data());
 
+	bool hasPresent = false, hasGraph = false;
+
 	for (i = 0; i < queueFamilyCount; i++)
 	{
 
-		if (queueFamilyProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+		if (!hasGraph & queueFamilyProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			vkInfo.graQueueFamilyIndex = i;
-			break;
+			hasGraph = true;
 		}
+
+		if (!hasPresent)
+		{
+			VkBool32 presentSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(vkInfo.gpu, i, vkInfo.surface, &presentSupport);
+			if (presentSupport) {
+				vkInfo.preQueueFamilyIndex = i;
+				hasPresent = true;
+			}
+		}
+
+		if (hasPresent && hasGraph)
+			break;
 
 		if (i == queueFamilyCount - 1)
 		{
@@ -157,63 +178,51 @@ void VulkanLoader::checkQueueFamily()
 	}
 }
 
-void VulkanLoader::createSurface(GLFWwindow* glfwWin)
+void VulkanLoader::createLogicalDevice()
 {
-	VkResult result = glfwCreateWindowSurface(vkInfo.instance, glfwWin, NULL, &vkInfo.surface);
-	AppManager::appAssert(result == VK_SUCCESS, "failed to create window surface.");
-
-	unsigned int i = 0;
-
-	/*std::vector<VkBool32> supported(vkInfo.queueFamilyCount);
-
-	for (i = 0; i < vkInfo.queueFamilyCount; i++) 
-	{
-		vkGetPhysicalDeviceSurfaceSupportKHR(vkInfo.gpus[vkInfo.gpuIndex], i, vkInfo.surface, &supported[i]);
-	}
-
-	bool sameFamily;
-	for (i = 0; i < vkInfo.queueFamilyCount; i++)
-	{//find a queue family that supports present and graphics mode.
-		if (vkInfo.queueFamilyProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT && supported[i])
-		{
-			vkInfo.graQueueFamilyIndex = i;
-			vkInfo.preQueueFamilyIndex = i;
-			sameFamily = true;
-			break;
-		}
-	}
-
-	if (!sameFamily)
-	{//if not found, find one only supports present mode.
-		for (i = 0; i < vkInfo.queueFamilyCount; i++)
-		{
-			VkBool32 supported = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(vkInfo.gpus[vkInfo.gpuIndex], i, vkInfo.surface, &supported);
-			if (supported)
-			{
-				vkInfo.preQueueFamilyIndex = i;
-				break;
-			}
-
-		}
-	}*/
-
-
+	float queuePriorityes[] = { 0.0f };
 	
+	std::vector< VkDeviceQueueCreateInfo> dqcInfos;
+	std::set<uint32_t> uniqueQueueFamilies = { vkInfo.graQueueFamilyIndex, vkInfo.preQueueFamilyIndex };
+	for (const auto family : uniqueQueueFamilies)
+	{
+		VkDeviceQueueCreateInfo qcInfo = {};
+		qcInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		qcInfo.queueCount = 1;
+		qcInfo.pQueuePriorities = queuePriorityes;
+		qcInfo.queueFamilyIndex = family;
+		dqcInfos.push_back(qcInfo);
+	}
+
+	VkDeviceCreateInfo devInfo = {};
+	devInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	devInfo.queueCreateInfoCount = static_cast<uint32_t>(dqcInfos.size());
+	devInfo.pQueueCreateInfos = dqcInfos.data();
+
+	if (vkInfo.layersEnabled) {
+		devInfo.enabledLayerCount = static_cast<uint32_t>(vkInfo.layers.size());
+		devInfo.ppEnabledLayerNames = vkInfo.layers.data();
+	}
+	else {
+		devInfo.enabledLayerCount = 0;
+	}
+
+	VkResult result = vkCreateDevice(vkInfo.gpu, &devInfo, NULL, &vkInfo.device);
+	AppManager::appAssert(result == VK_SUCCESS, "something bad happened when creating device.");
 }
 
 /*void VulkanLoader::createSwapChain()
 {
 	VkSurfaceCapabilitiesKHR cap;
-	VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkInfo.gpus[vkInfo.gpuIndex], vkInfo.surface, &cap);
+	VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkInfo.gpu, vkInfo.surface, &cap);
 	AppManager::appAssert(result == VK_SUCCESS, "cann't acquire surface capabilities in current physical device.");
 
 	VkFormat format;
 	uint32_t formatCount;
-	result = vkGetPhysicalDeviceSurfaceFormatsKHR(vkInfo.gpus[0], vkInfo.surface, &formatCount, NULL);
+	result = vkGetPhysicalDeviceSurfaceFormatsKHR(vkInfo.gpu, vkInfo.surface, &formatCount, NULL);
 	AppManager::appAssert(result == VK_SUCCESS, "something badly happened when acquiring count of surface formats.");
 	VkSurfaceFormatKHR *surfFormats = (VkSurfaceFormatKHR *)malloc(formatCount * sizeof(VkSurfaceFormatKHR));
-	result = vkGetPhysicalDeviceSurfaceFormatsKHR(vkInfo.gpus[0], vkInfo.surface, &formatCount, surfFormats);
+	result = vkGetPhysicalDeviceSurfaceFormatsKHR(vkInfo.gpu, vkInfo.surface, &formatCount, surfFormats);
 	AppManager::appAssert(result == VK_SUCCESS, "something badly happened when acquiring surface formats.");
 	if (formatCount == 1 && surfFormats[0].format == VK_FORMAT_UNDEFINED) {
 		format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -289,32 +298,6 @@ void VulkanLoader::createSurface(GLFWwindow* glfwWin)
 	result = vkCreateSwapchainKHR(vkInfo.device, &sccInfo, nullptr, &vkInfo.swapchain);
 	AppManager::appAssert(result == VK_SUCCESS, "something wrong happened when creating swap chain");
 }*/
-
-void VulkanLoader::createLogicalDevice()
-{
-	float queuePriorityes[] = { 0.0f };
-	VkDeviceQueueCreateInfo qcInfo = {};
-	qcInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	qcInfo.queueCount = 1;
-	qcInfo.pQueuePriorities = queuePriorityes;
-	qcInfo.queueFamilyIndex = vkInfo.graQueueFamilyIndex;
-
-	VkDeviceCreateInfo devInfo = {};
-	devInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	devInfo.queueCreateInfoCount = 1;
-	devInfo.pQueueCreateInfos = &qcInfo;
-
-	if (vkInfo.layersEnabled) {
-		devInfo.enabledLayerCount = static_cast<uint32_t>(vkInfo.layers.size());
-		devInfo.ppEnabledLayerNames = vkInfo.layers.data();
-	}
-	else {
-		devInfo.enabledLayerCount = 0;
-	}
-
-	VkResult result = vkCreateDevice(vkInfo.gpu, &devInfo, NULL, &vkInfo.device);
-	AppManager::appAssert(result == VK_SUCCESS, "something bad happened when creating device.");
-}
 
 /*void VulkanLoader::createCommandPool()
 {
@@ -426,7 +409,7 @@ int VulkanLoader::rateDeviceSuitability(VkPhysicalDevice & device)
 	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
 	if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-		score += 10;
+		score += 2000;
 
 	score += deviceProperties.limits.maxImageDimension2D;
 

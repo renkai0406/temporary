@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <map>
+#include <set>
 #include "log.h"
 #include "appmng.h"
 
@@ -43,11 +44,11 @@ public:
 private:
 	 void createInstance(const std::string& title);
 	 void setupDebugMessenger();
+	 void createSurface(GLFWwindow* glfwWin);
 	 void pickPhysicalDevice();
 	 void checkQueueFamily();
-	 void createSurface(GLFWwindow* glfwWin);
-	 //void createSwapChain();
 	 void createLogicalDevice();
+	 //void createSwapChain();
 	 //void createCommandPool();
 	 //void createCommandBuffer();
 	 bool checkLayersSupport();
