@@ -16,13 +16,20 @@ struct VkInfo
 	VkInstance instance;
 	//the layers we needed.
 	const std::vector<const char*> layers = {
-	"VK_LAYER_LUNARG_standard_validation"};
+	"VK_LAYER_LUNARG_standard_validation"
+	};
+	const std::vector<const char*> deviceExtensions = {
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	};
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice gpu;
 	VkDevice device;
 	VkSurfaceKHR surface;
 	VkSwapchainKHR swapchain;
 	unsigned int width, height;
+	std::vector<VkImage> swapImages;
+	VkExtent2D scExtent;
+	VkFormat scFormat;
 	//unsigned int queueFamilyIndex;
 	unsigned int graQueueFamilyIndex, preQueueFamilyIndex;
 	VkCommandPool cpool;
@@ -48,7 +55,7 @@ private:
 	 void pickPhysicalDevice();
 	 void checkQueueFamily();
 	 void createLogicalDevice();
-	 //void createSwapChain();
+	 void createSwapChain();
 	 //void createCommandPool();
 	 //void createCommandBuffer();
 	 bool checkLayersSupport();

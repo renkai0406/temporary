@@ -19,7 +19,7 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 	checkQueueFamily();
 	createLogicalDevice();
 	
-	//createSwapChain();
+	createSwapChain();
 	
 	/*createCommandPool();
 	createCommandBuffer();*/
@@ -30,6 +30,8 @@ void VulkanLoader::clearup()
 	//vkFreeCommandBuffers(vkInfo.device, vkInfo.cpool, 1, &vkInfo.cbuffer);
 	
 	//vkDestroyCommandPool(vkInfo.device, vkInfo.cpool, NULL);
+
+	vkDestroySwapchainKHR(vkInfo.device, vkInfo.swapchain, nullptr);
 
 	vkDeviceWaitIdle(vkInfo.device);
 	vkDestroyDevice(vkInfo.device, NULL);
@@ -207,11 +209,14 @@ void VulkanLoader::createLogicalDevice()
 		devInfo.enabledLayerCount = 0;
 	}
 
+	devInfo.enabledExtensionCount = static_cast<uint32_t>(vkInfo.deviceExtensions.size());
+	devInfo.ppEnabledExtensionNames = vkInfo.deviceExtensions.data();
+
 	VkResult result = vkCreateDevice(vkInfo.gpu, &devInfo, NULL, &vkInfo.device);
 	AppManager::appAssert(result == VK_SUCCESS, "something bad happened when creating device.");
 }
 
-/*void VulkanLoader::createSwapChain()
+void VulkanLoader::createSwapChain()
 {
 	VkSurfaceCapabilitiesKHR cap;
 	VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkInfo.gpu, vkInfo.surface, &cap);
@@ -232,6 +237,8 @@ void VulkanLoader::createLogicalDevice()
 		format = surfFormats[0].format;
 	}
 	free(surfFormats);
+
+	vkInfo.scFormat = format;
 
 	VkExtent2D swapchainExtent;
 	// width and height are either both 0xFFFFFFFF, or both not 0xFFFFFFFF.
@@ -259,6 +266,8 @@ void VulkanLoader::createLogicalDevice()
 		swapchainExtent = cap.currentExtent;
 	}
 
+	vkInfo.scExtent = swapchainExtent;
+
 	VkSurfaceTransformFlagBitsKHR preTransform;
 	if (cap.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
 		preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
@@ -272,6 +281,8 @@ void VulkanLoader::createLogicalDevice()
 	sccInfo.surface = vkInfo.surface;
 	sccInfo.imageFormat = format;
 	sccInfo.minImageCount = cap.minImageCount;
+	sccInfo.imageArrayLayers = 1;
+	sccInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	sccInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
 	sccInfo.imageExtent.width = swapchainExtent.width;
 	sccInfo.imageExtent.height = swapchainExtent.height;
@@ -297,7 +308,12 @@ void VulkanLoader::createLogicalDevice()
 
 	result = vkCreateSwapchainKHR(vkInfo.device, &sccInfo, nullptr, &vkInfo.swapchain);
 	AppManager::appAssert(result == VK_SUCCESS, "something wrong happened when creating swap chain");
-}*/
+
+	uint32_t imageCount;
+	vkGetSwapchainImagesKHR(vkInfo.device, vkInfo.swapchain, &imageCount, nullptr);
+	vkInfo.swapImages.resize(imageCount);
+	vkGetSwapchainImagesKHR(vkInfo.device, vkInfo.swapchain, &imageCount, vkInfo.swapImages.data());
+}
 
 /*void VulkanLoader::createCommandPool()
 {
@@ -374,9 +390,20 @@ bool VulkanLoader::checkExtensionsSupport(const std::vector<const char*>& needs)
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanLoader::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT * pCallbackData, void * pUserData)
 {
-	if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-		// Message is important enough to show
-		std::cout << "validation layer: " << pCallbackData->pMessage << std::endl;
+	std::string msg = pCallbackData->pMessage;
+	switch (messageSeverity)
+	{
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+	{
+		
+		Log::Instance()->log("validation layer message:" + msg);
+		break;
+	}
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+		AppManager::appError(msg);
+		break;
+	default:
+		break;
 	}
 
 	return VK_FALSE;
