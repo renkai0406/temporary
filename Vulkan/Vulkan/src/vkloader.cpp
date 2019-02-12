@@ -14,11 +14,12 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 {
 	createInstance(title);
 	setupDebugMessenger();
+	createSurface(glfwWin);
 	pickPhysicalDevice();
-	checkQueuiFamily();
+	checkQueueFamily();
 	createLogicalDevice();
-	/*createSurface(glfwWin);
-	createSwapChain();
+	
+	/*createSwapChain();
 	
 	createCommandPool();
 	createCommandBuffer();*/
@@ -33,7 +34,7 @@ void VulkanLoader::clearup()
 	vkDeviceWaitIdle(vkInfo.device);
 	vkDestroyDevice(vkInfo.device, NULL);
 
-	//vkDestroySurfaceKHR(vkInfo.instance, vkInfo.surface, nullptr);
+	vkDestroySurfaceKHR(vkInfo.instance, vkInfo.surface, nullptr);
 
 	if (vkInfo.layersEnabled) {
 		DestroyDebugUtilsMessengerEXT(vkInfo.instance, vkInfo.debugMessenger, nullptr);
@@ -130,7 +131,7 @@ void VulkanLoader::pickPhysicalDevice()
 
 }
 
-void VulkanLoader::checkQueuiFamily()
+void VulkanLoader::checkQueueFamily()
 {
 	unsigned int i, queueFamilyCount;
 	const VkPhysicalDevice& gpu = vkInfo.gpu;
@@ -146,19 +147,24 @@ void VulkanLoader::checkQueuiFamily()
 
 		if (queueFamilyProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			vkInfo.graQueueFamilyIndex = i;
+			break;
+		}
+
+		if (i == queueFamilyCount - 1)
+		{
+			AppManager::appError("failed to find a suitable queue family.");
 		}
 	}
-	Log::Instance()->log("print gpu info end.");
 }
 
-/*void VulkanLoader::createSurface(GLFWwindow* glfwWin)
+void VulkanLoader::createSurface(GLFWwindow* glfwWin)
 {
 	VkResult result = glfwCreateWindowSurface(vkInfo.instance, glfwWin, NULL, &vkInfo.surface);
-
 	AppManager::appAssert(result == VK_SUCCESS, "failed to create window surface.");
+
 	unsigned int i = 0;
 
-	std::vector<VkBool32> supported(vkInfo.queueFamilyCount);
+	/*std::vector<VkBool32> supported(vkInfo.queueFamilyCount);
 
 	for (i = 0; i < vkInfo.queueFamilyCount; i++) 
 	{
@@ -190,10 +196,11 @@ void VulkanLoader::checkQueuiFamily()
 			}
 
 		}
-	}
+	}*/
+
 
 	
-}*/
+}
 
 /*void VulkanLoader::createSwapChain()
 {

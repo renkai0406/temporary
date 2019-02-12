@@ -44,8 +44,8 @@ private:
 	 void createInstance(const std::string& title);
 	 void setupDebugMessenger();
 	 void pickPhysicalDevice();
-	 void checkQueuiFamily();
-	 //void createSurface(GLFWwindow* glfwWin);
+	 void checkQueueFamily();
+	 void createSurface(GLFWwindow* glfwWin);
 	 //void createSwapChain();
 	 void createLogicalDevice();
 	 //void createCommandPool();
