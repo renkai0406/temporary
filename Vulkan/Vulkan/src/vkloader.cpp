@@ -18,8 +18,8 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 	pickPhysicalDevice();
 	checkQueueFamily();
 	createLogicalDevice();
-	
 	createSwapChain();
+	createImageViews();
 	
 	/*createCommandPool();
 	createCommandBuffer();*/
@@ -30,6 +30,10 @@ void VulkanLoader::clearup()
 	//vkFreeCommandBuffers(vkInfo.device, vkInfo.cpool, 1, &vkInfo.cbuffer);
 	
 	//vkDestroyCommandPool(vkInfo.device, vkInfo.cpool, NULL);
+
+	for (auto imageView : vkInfo.swapImgViews) {
+		vkDestroyImageView(vkInfo.device, imageView, nullptr);
+	}
 
 	vkDestroySwapchainKHR(vkInfo.device, vkInfo.swapchain, nullptr);
 
@@ -313,6 +317,35 @@ void VulkanLoader::createSwapChain()
 	vkGetSwapchainImagesKHR(vkInfo.device, vkInfo.swapchain, &imageCount, nullptr);
 	vkInfo.swapImages.resize(imageCount);
 	vkGetSwapchainImagesKHR(vkInfo.device, vkInfo.swapchain, &imageCount, vkInfo.swapImages.data());
+}
+
+void VulkanLoader::createImageViews()
+{
+	vkInfo.swapImgViews.resize(vkInfo.swapImages.size());
+
+	unsigned int i = 0;
+	
+	for (i = 0; i < vkInfo.swapImages.size(); i++)
+	{
+		VkImageViewCreateInfo ivcInfo = {};
+		ivcInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		ivcInfo.image = vkInfo.swapImages[i];
+		ivcInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		ivcInfo.format = vkInfo.scFormat;
+		ivcInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		ivcInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		ivcInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		ivcInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+		ivcInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		ivcInfo.subresourceRange.baseMipLevel = 0;
+		ivcInfo.subresourceRange.levelCount = 1;
+		ivcInfo.subresourceRange.baseArrayLayer = 0;
+		ivcInfo.subresourceRange.layerCount = 1;
+
+		VkResult result = vkCreateImageView(vkInfo.device, &ivcInfo, NULL, &vkInfo.swapImgViews[i]);
+		AppManager::appAssert(result == VK_SUCCESS, "failed to create image view:" + std::to_string(i));
+	}
 }
 
 /*void VulkanLoader::createCommandPool()

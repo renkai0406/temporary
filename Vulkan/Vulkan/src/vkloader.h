@@ -28,6 +28,7 @@ struct VkInfo
 	VkSwapchainKHR swapchain;
 	unsigned int width, height;
 	std::vector<VkImage> swapImages;
+	std::vector<VkImageView> swapImgViews;
 	VkExtent2D scExtent;
 	VkFormat scFormat;
 	//unsigned int queueFamilyIndex;
@@ -56,6 +57,7 @@ private:
 	 void checkQueueFamily();
 	 void createLogicalDevice();
 	 void createSwapChain();
+	 void createImageViews();
 	 //void createCommandPool();
 	 //void createCommandBuffer();
 	 bool checkLayersSupport();
