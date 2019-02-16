@@ -11,13 +11,19 @@ ShaderManager::~ShaderManager()
 {
 }
 
-void ShaderManager::init(const std::string * files, int count)
+void ShaderManager::init(const VkDevice& device, const std::string * files, int count)
 {
-	unsigned int i = 0;
-	for (i = 0; i < count; i++)
-	{
-		auto codes = readFile(files[i]);
-	}
+	this->device = device;
+	
+	auto vertModule = createShaderModule(readFile(files[0]));
+	auto geomModule = createShaderModule(readFile(files[2]));
+
+	createPippline(vertModule, geomModule);
+
+
+
+	vkDestroyShaderModule(device, vertModule, nullptr);
+	vkDestroyShaderModule(device, geomModule, nullptr);
 }
 
 std::vector<char> ShaderManager::readFile(const std::string & fname)
@@ -38,4 +44,35 @@ std::vector<char> ShaderManager::readFile(const std::string & fname)
 
 	return buffer;
 
+}
+
+VkShaderModule ShaderManager::createShaderModule(const std::vector<char>& codes)
+{
+	VkShaderModuleCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.codeSize = codes.size();
+	createInfo.pCode = reinterpret_cast<const unsigned int*>(codes.data());
+
+	VkShaderModule shaderModule;
+	VkResult result = vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule);
+	AppManager::appAssert(result != VK_SUCCESS, "failed to create shader module!");
+
+	return shaderModule;
+}
+
+void ShaderManager::createPippline(VkShaderModule & vert, VkShaderModule & geom)
+{
+	VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
+	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertShaderStageInfo.module = vert;
+	vertShaderStageInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
+	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragShaderStageInfo.module = geom;
+	fragShaderStageInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 }
