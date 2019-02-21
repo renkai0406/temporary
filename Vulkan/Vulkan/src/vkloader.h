@@ -6,11 +6,16 @@
 #include <vector>
 #include <map>
 #include <set>
+#include<fstream>
 #include "log.h"
 #include "appmng.h"
 
 const unsigned int GPU_NEEDED_COUNT = 1;
 
+const unsigned int SHADER_COUNT = 2;
+const std::string SHADER_PATH[SHADER_COUNT] = {"shader/", "shader/"};
+
+#pragma region VkInfo
 struct VkInfo
 {
 	VkInstance instance;
@@ -33,6 +38,7 @@ struct VkInfo
 	VkFormat scFormat;
 	//unsigned int queueFamilyIndex;
 	unsigned int graQueueFamilyIndex, preQueueFamilyIndex;
+	VkPipelineLayout pipelineLayout;
 	VkCommandPool cpool;
 	VkCommandBuffer cbuffer;
 #ifdef NDEBUG
@@ -41,6 +47,8 @@ struct VkInfo
 	const bool layersEnabled = true;
 #endif
 };
+#pragma endregion
+
 
 class VulkanLoader
 {
@@ -58,18 +66,23 @@ private:
 	 void createLogicalDevice();
 	 void createSwapChain();
 	 void createImageViews();
+	 void createReanderPass();
+	 void createPippline(const std::string* files, int count);
 	 //void createCommandPool();
 	 //void createCommandBuffer();
 	 bool checkLayersSupport();
 	 bool checkExtensionsSupport(const std::vector<const char*>& needs);
+
+	 VkResult CreateDebugUtilsMessengerEXT(const VkInstance &instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
+	 void DestroyDebugUtilsMessengerEXT(const VkInstance &instance, VkDebugUtilsMessengerEXT &debugMessenger, const VkAllocationCallbacks* pAllocator);
+	 int rateDeviceSuitability(VkPhysicalDevice& device);
+	 VkShaderModule createShaderModule(const std::vector<char>& codes);
 	 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 		 VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		 VkDebugUtilsMessageTypeFlagsEXT messageType,
 		 const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		 void* pUserData);
-	 VkResult CreateDebugUtilsMessengerEXT(const VkInstance &instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
-	 void DestroyDebugUtilsMessengerEXT(const VkInstance &instance, VkDebugUtilsMessengerEXT &debugMessenger, const VkAllocationCallbacks* pAllocator);
-	 int rateDeviceSuitability(VkPhysicalDevice& device);
+	 static std::vector<char> readFile(const std::string& fname);
 	
 	
 
