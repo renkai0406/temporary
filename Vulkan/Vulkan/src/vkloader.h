@@ -38,6 +38,7 @@ struct VkInfo
 	VkFormat scFormat;
 	//unsigned int queueFamilyIndex;
 	unsigned int graQueueFamilyIndex, preQueueFamilyIndex;
+	VkRenderPass renderPass;
 	VkPipelineLayout pipelineLayout;
 	VkCommandPool cpool;
 	VkCommandBuffer cbuffer;
