@@ -40,6 +40,7 @@ struct VkInfo
 	unsigned int graQueueFamilyIndex, preQueueFamilyIndex;
 	VkRenderPass renderPass;
 	VkPipelineLayout pipelineLayout;
+	VkPipeline graphicsPipeline;
 	VkCommandPool cpool;
 	VkCommandBuffer cbuffer;
 #ifdef NDEBUG

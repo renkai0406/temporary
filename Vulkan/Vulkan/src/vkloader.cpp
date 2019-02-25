@@ -32,6 +32,7 @@ void VulkanLoader::clearup()
 	//vkFreeCommandBuffers(vkInfo.device, vkInfo.cpool, 1, &vkInfo.cbuffer);
 	
 	//vkDestroyCommandPool(vkInfo.device, vkInfo.cpool, NULL);
+	vkDestroyPipeline(vkInfo.device, vkInfo.graphicsPipeline, nullptr);
 
 	vkDestroyPipelineLayout(vkInfo.device, vkInfo.pipelineLayout, nullptr);
 
@@ -498,7 +499,30 @@ void VulkanLoader::createPippline(const std::string* files, int count)
 	VkResult result = vkCreatePipelineLayout(vkInfo.device, &pipelineLayoutInfo, nullptr, &vkInfo.pipelineLayout);
 	AppManager::appAssert(result == VK_SUCCESS, "failed to create pipeline layout!");
 
+	//prepare to create pipeline.
+	VkGraphicsPipelineCreateInfo pipelineInfo = {};
+	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.stageCount = 2;
+	pipelineInfo.pStages = shaderStages;
 
+	pipelineInfo.pVertexInputState = &vertexInputInfo;
+	pipelineInfo.pInputAssemblyState = &inputAssembly;
+	pipelineInfo.pViewportState = &viewportState;
+	pipelineInfo.pRasterizationState = &rasterizer;
+	pipelineInfo.pMultisampleState = &multisampling;
+	pipelineInfo.pDepthStencilState = nullptr; // Optional
+	pipelineInfo.pColorBlendState = &colorBlending;
+	pipelineInfo.pDynamicState = nullptr; // Optional
+
+	pipelineInfo.layout = vkInfo.pipelineLayout;
+
+	pipelineInfo.renderPass = vkInfo.renderPass;
+	pipelineInfo.subpass = 0;
+
+	VkPipeline graphicsPipeline;
+
+	result = vkCreateGraphicsPipelines(vkInfo.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline);
+	AppManager::appAssert(result == VK_SUCCESS, "failed to create graphics pipeline!");
 
 	vkDestroyShaderModule(vkInfo.device, vertModule, nullptr);
 	vkDestroyShaderModule(vkInfo.device, geomModule, nullptr);
