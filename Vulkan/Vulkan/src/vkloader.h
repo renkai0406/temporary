@@ -41,6 +41,7 @@ struct VkInfo
 	VkRenderPass renderPass;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
+	std::vector<VkFramebuffer> scFramebuffers;
 	VkCommandPool cpool;
 	VkCommandBuffer cbuffer;
 #ifdef NDEBUG
@@ -58,7 +59,7 @@ public:
 	VulkanLoader();
 	~VulkanLoader();
 	 void init(const std::string& title, GLFWwindow* glfwWin);
-	 void clearup();
+	 void cleanup();
 private:
 	 void createInstance(const std::string& title);
 	 void setupDebugMessenger();
@@ -70,6 +71,7 @@ private:
 	 void createImageViews();
 	 void createReanderPass();
 	 void createPippline(const std::string* files, int count);
+	 void createFrameBuffer();
 	 //void createCommandPool();
 	 //void createCommandBuffer();
 	 bool checkLayersSupport();
@@ -85,8 +87,6 @@ private:
 		 const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		 void* pUserData);
 	 static std::vector<char> readFile(const std::string& fname);
-	
-	
 
 private:
 	 VkInfo vkInfo;

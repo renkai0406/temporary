@@ -27,11 +27,14 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 	createCommandBuffer();*/
 }
 
-void VulkanLoader::clearup()
+void VulkanLoader::cleanup()
 {
 	//vkFreeCommandBuffers(vkInfo.device, vkInfo.cpool, 1, &vkInfo.cbuffer);
 	
 	//vkDestroyCommandPool(vkInfo.device, vkInfo.cpool, NULL);
+	for (auto framebuffer : vkInfo.scFramebuffers) {
+		vkDestroyFramebuffer(vkInfo.device, framebuffer, nullptr);
+	}
 	vkDestroyPipeline(vkInfo.device, vkInfo.graphicsPipeline, nullptr);
 
 	vkDestroyPipelineLayout(vkInfo.device, vkInfo.pipelineLayout, nullptr);
@@ -526,6 +529,28 @@ void VulkanLoader::createPippline(const std::string* files, int count)
 
 	vkDestroyShaderModule(vkInfo.device, vertModule, nullptr);
 	vkDestroyShaderModule(vkInfo.device, geomModule, nullptr);
+}
+
+void VulkanLoader::createFrameBuffer()
+{
+	vkInfo.scFramebuffers.resize(vkInfo.swapImgViews.size());
+	for (size_t i = 0; i < vkInfo.swapImgViews.size(); i++) {
+		VkImageView attachments[] = {
+			vkInfo.swapImgViews[i]
+		};
+
+		VkFramebufferCreateInfo framebufferInfo = {};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = vkInfo.renderPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = vkInfo.scExtent.width;
+		framebufferInfo.height = vkInfo.scExtent.height;
+		framebufferInfo.layers = 1;
+
+		VkResult result = vkCreateFramebuffer(vkInfo.device, &framebufferInfo, nullptr, &vkInfo.scFramebuffers[i]);
+		AppManager::appAssert(result == VK_SUCCESS, "failed to create framebuffer.");
+	}
 }
 
 /*void VulkanLoader::createCommandPool()
