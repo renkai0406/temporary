@@ -72,8 +72,8 @@ private:
 	 void createReanderPass();
 	 void createPippline(const std::string* files, int count);
 	 void createFrameBuffer();
-	 //void createCommandPool();
-	 //void createCommandBuffer();
+	 void createCommandPool();
+	 void createCommandBuffer();
 	 bool checkLayersSupport();
 	 bool checkExtensionsSupport(const std::vector<const char*>& needs);
 

@@ -23,15 +23,15 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 	createReanderPass();
 	createPippline(SHADER_PATH, SHADER_COUNT);
 	
-	/*createCommandPool();
-	createCommandBuffer();*/
+	createCommandPool();
+	createCommandBuffer();
 }
 
 void VulkanLoader::cleanup()
 {
 	//vkFreeCommandBuffers(vkInfo.device, vkInfo.cpool, 1, &vkInfo.cbuffer);
 	
-	//vkDestroyCommandPool(vkInfo.device, vkInfo.cpool, NULL);
+	vkDestroyCommandPool(vkInfo.device, vkInfo.cpool, NULL);
 	for (auto framebuffer : vkInfo.scFramebuffers) {
 		vkDestroyFramebuffer(vkInfo.device, framebuffer, nullptr);
 	}
@@ -553,7 +553,7 @@ void VulkanLoader::createFrameBuffer()
 	}
 }
 
-/*void VulkanLoader::createCommandPool()
+void VulkanLoader::createCommandPool()
 {
 	VkCommandPoolCreateInfo cpInfo = {};
 	cpInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -573,7 +573,7 @@ void VulkanLoader::createCommandBuffer()
 
 	VkResult result = vkAllocateCommandBuffers(vkInfo.device, &cbaInfo, &vkInfo.cbuffer);
 	AppManager::appAssert(result == VK_SUCCESS, "something bad happened when allocating command buffers.");
-}*/
+}
 
 bool VulkanLoader::checkLayersSupport()
 {
