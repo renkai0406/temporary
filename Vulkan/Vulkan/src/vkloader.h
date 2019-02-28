@@ -43,7 +43,7 @@ struct VkInfo
 	VkPipeline graphicsPipeline;
 	std::vector<VkFramebuffer> scFramebuffers;
 	VkCommandPool cpool;
-	VkCommandBuffer cbuffer;
+	std::vector<VkCommandBuffer> commandBuffers;
 #ifdef NDEBUG
 	const bool layersEnabled = false;
 #else
@@ -73,7 +73,7 @@ private:
 	 void createPippline(const std::string* files, int count);
 	 void createFrameBuffer();
 	 void createCommandPool();
-	 void createCommandBuffer();
+	 void createCommandBuffers();
 	 bool checkLayersSupport();
 	 bool checkExtensionsSupport(const std::vector<const char*>& needs);
 
