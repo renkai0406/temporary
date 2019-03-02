@@ -574,6 +574,37 @@ void VulkanLoader::createCommandBuffers()
 
 	VkResult result = vkAllocateCommandBuffers(vkInfo.device, &cbaInfo, vkInfo.commandBuffers.data());
 	AppManager::appAssert(result == VK_SUCCESS, "something bad happened when allocating command buffers.");
+
+	for (size_t i = 0; i < vkInfo.commandBuffers.size(); i++) {
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+		result = vkBeginCommandBuffer(vkInfo.commandBuffers[i], &beginInfo);
+		AppManager::appAssert(result == VK_SUCCESS, "failed to begin recording command buffer.");
+
+		VkRenderPassBeginInfo renderPassInfo = {};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = vkInfo.renderPass;
+		renderPassInfo.framebuffer = vkInfo.scFramebuffers[i];
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = vkInfo.scExtent;
+
+		VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+		renderPassInfo.clearValueCount = 1;
+		renderPassInfo.pClearValues = &clearColor;
+
+		vkCmdBeginRenderPass(vkInfo.commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		vkCmdBindPipeline(vkInfo.commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkInfo.graphicsPipeline);
+
+		vkCmdDraw(vkInfo.commandBuffers[i], 3, 1, 0, 0);
+
+		vkCmdEndRenderPass(vkInfo.commandBuffers[i]);
+
+		result = vkEndCommandBuffer(vkInfo.commandBuffers[i]);
+		AppManager::appAssert(result == VK_SUCCESS, "failed to record command buffer.");
+	}
 }
 
 bool VulkanLoader::checkLayersSupport()
