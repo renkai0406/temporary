@@ -27,7 +27,7 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 	createCommandBuffers();
 }
 
-void VulkanLoader::cleanup()
+void VulkanLoader::clearup()
 {
 	//vkFreeCommandBuffers(vkInfo.device, vkInfo.cpool, 1, &vkInfo.cbuffer);
 	

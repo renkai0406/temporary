@@ -59,7 +59,7 @@ public:
 	VulkanLoader();
 	~VulkanLoader();
 	 void init(const std::string& title, GLFWwindow* glfwWin);
-	 void cleanup();
+	 void clearup();
 private:
 	 void createInstance(const std::string& title);
 	 void setupDebugMessenger();
