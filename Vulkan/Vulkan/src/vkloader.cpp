@@ -17,21 +17,21 @@ void VulkanLoader::init(const std::string& title, GLFWwindow* glfwWin)
 	createSurface(glfwWin);
 	pickPhysicalDevice();
 	checkQueueFamily();
-	createLogicalDevice();
+	/*createLogicalDevice();
 	createSwapChain();
 	createImageViews();
 	createReanderPass();
 	createPippline(SHADER_PATH, SHADER_COUNT);
 	
 	createCommandPool();
-	createCommandBuffers();
+	createCommandBuffers();*/
 }
 
 void VulkanLoader::clearup()
 {
 	//vkFreeCommandBuffers(vkInfo.device, vkInfo.cpool, 1, &vkInfo.cbuffer);
 	
-	vkDestroyCommandPool(vkInfo.device, vkInfo.cpool, NULL);
+	/*vkDestroyCommandPool(vkInfo.device, vkInfo.cpool, NULL);
 	for (auto framebuffer : vkInfo.scFramebuffers) {
 		vkDestroyFramebuffer(vkInfo.device, framebuffer, nullptr);
 	}
@@ -54,7 +54,7 @@ void VulkanLoader::clearup()
 
 	if (vkInfo.layersEnabled) {
 		DestroyDebugUtilsMessengerEXT(vkInfo.instance, vkInfo.debugMessenger, nullptr);
-	}
+	}*/
 
 	vkDestroyInstance(vkInfo.instance, NULL);
 }
@@ -615,6 +615,12 @@ bool VulkanLoader::checkLayersSupport()
 	std::vector<VkLayerProperties> availableLayers(layerCount);
 	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
+	std::string info = "all the layers supported by the instance :\n";
+	for (const auto& layerProperties : availableLayers) {
+		info = info + layerProperties.layerName + ";\n";
+	}
+	Log::Instance()->log(info);
+
 	for (const char* layerName : vkInfo.layers) {
 		bool layerFound = false;
 
@@ -624,7 +630,7 @@ bool VulkanLoader::checkLayersSupport()
 				break;
 			}
 		}
-
+		
 		if (!layerFound) {
 			return false;
 		}
@@ -664,11 +670,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanLoader::debugCallback(VkDebugUtilsMessageSe
 	switch (messageSeverity)
 	{
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-	{
-		
 		Log::Instance()->log("validation layer message:" + msg);
 		break;
-	}
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 		AppManager::appError(msg);
 		break;
@@ -708,7 +711,11 @@ VkResult VulkanLoader::CreateDebugUtilsMessengerEXT(const VkInstance &instance, 
 	}
 }
 
-void VulkanLoader::DestroyDebugUtilsMessengerEXT(const VkInstance &instance, VkDebugUtilsMessengerEXT &debugMessenger, const VkAllocationCallbacks* pAllocator) {
+void VulkanLoader::DestroyDebugUtilsMessengerEXT(
+	const VkInstance &instance, 
+	VkDebugUtilsMessengerEXT &debugMessenger, 
+	const VkAllocationCallbacks* pAllocator) 
+{
 	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 	if (func != nullptr) {
 		func(instance, debugMessenger, pAllocator);

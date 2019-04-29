@@ -16,7 +16,7 @@ const unsigned int SHADER_COUNT = 2;
 const std::string SHADER_PATH[SHADER_COUNT] = {"shader/", "shader/"};
 
 #pragma region VkInfo
-struct VkInfo
+struct VkGlobal
 {
 	VkInstance instance;
 	//the layers we needed.
@@ -89,7 +89,7 @@ private:
 	 static std::vector<char> readFile(const std::string& fname);
 
 private:
-	 VkInfo vkInfo;
+	VkGlobal vkInfo;
 
 };
 
