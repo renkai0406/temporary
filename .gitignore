@@ -25,3 +25,5 @@ Vulkan/Vulkan/Debug/vkloader.obj.enc
 *.log
 Vulkan/Vulkan/x64/Debug/*.obj
 Vulkan/Vulkan/x64/Debug/Vulkan.tlog/*.tlog
+/Vulkan/Debug
+Debug
