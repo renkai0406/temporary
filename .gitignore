@@ -30,3 +30,11 @@ Vulkan/Vulkan/x64/Debug/Vulkan.tlog/*.tlog
 /Vulkan/Vulkan/*.vcxproj
 /Vulkan/Vulkan/Vulkan.vcxproj.user
 /Vulkan/Vulkan/Vulkan.vcxproj.filters
+*.ipch
+*.suo
+*.db
+*.opendb
+*.idb
+*.pdb
+*.pch
+*.lastbuildstate
