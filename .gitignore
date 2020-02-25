@@ -25,3 +25,8 @@ Vulkan/Vulkan/Debug/vkloader.obj.enc
 *.log
 Vulkan/Vulkan/x64/Debug/*.obj
 Vulkan/Vulkan/x64/Debug/Vulkan.tlog/*.tlog
+/Vulkan/Vulkan/Debug
+/Vulkan/Debug
+/Vulkan/Vulkan/*.vcxproj
+/Vulkan/Vulkan/Vulkan.vcxproj.user
+/Vulkan/Vulkan/Vulkan.vcxproj.filters
